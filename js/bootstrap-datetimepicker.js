@@ -111,6 +111,11 @@
     this.title = typeof options.title === 'undefined' ? false : options.title;
     this.timezone = options.timezone || timeZoneAbbreviation();
 
+    this.dayStartHour = options.dayStartHour ? options.dayStartHour : 0;
+    this.dayEndHour = options.dayEndHour ? options.dayEndHour : 23;
+    this.hourMinutes = options.hourMinutes ? options.hourMinutes : '00';
+    this.forceHourMinutes = options.forceHourMinutes || false;
+
     this.icons = {
       leftArrow: this.fontAwesome ? 'fa-arrow-left' : (this.bootcssVer === 3 ? 'glyphicon-arrow-left' : 'icon-arrow-left'),
       rightArrow: this.fontAwesome ? 'fa-arrow-right' : (this.bootcssVer === 3 ? 'glyphicon-arrow-right' : 'icon-arrow-right')
@@ -785,8 +790,9 @@
       html = [];
       var txt = '', meridian = '', meridianOld = '';
       var hoursDisabled = this.hoursDisabled || [];
-      d = new Date(this.viewDate)
-      for (var i = 0; i < 24; i++) {
+      d = new Date(this.viewDate);
+
+      for (var i = this.dayStartHour; i <= this.dayEndHour; i++) {
         d.setUTCHours(i);
         classes = this.onRenderHour(d);
         if (hoursDisabled.indexOf(i) !== -1) {
@@ -800,7 +806,7 @@
           classes.push('active');
         }
         if (this.showMeridian && dates[this.language].meridiem.length === 2) {
-          meridian = (i < 12 ? dates[this.language].meridiem[0] : dates[this.language].meridiem[1]);
+          meridian = (i - this.dayStartHour < 12 ? dates[this.language].meridiem[0] : dates[this.language].meridiem[1]);
           if (meridian !== meridianOld) {
             if (meridianOld !== '') {
               html.push('</fieldset>');
@@ -809,17 +815,17 @@
           }
           meridianOld = meridian;
           txt = (i % 12 ? i % 12 : 12);
-          if (i < 12) {
+          if (i - this.dayStartHour < 12) {
             classes.push('hour_am');
           } else {
             classes.push('hour_pm');
           }
           html.push('<span class="' + classes.join(' ') + '">' + txt + '</span>');
-          if (i === 23) {
+          if (i === this.dayEndHour) {
             html.push('</fieldset>');
           }
         } else {
-          txt = i + ':00';
+          txt = i + ':' + (this.hourMinutes ? this.hourMinutes : '00');
           html.push('<span class="' + classes.join(' ') + '">' + txt + '</span>');
         }
       }
@@ -1077,7 +1083,7 @@
                 month = this.viewDate.getUTCMonth(),
                 day = this.viewDate.getUTCDate(),
                 hours = this.viewDate.getUTCHours(),
-                minutes = this.viewDate.getUTCMinutes(),
+                minutes = this.forceHourMinutes ? this.hourMinutes : this.viewDate.getUTCMinutes(),
                 seconds = this.viewDate.getUTCSeconds();
 
               if (target.is('.month')) {
@@ -1108,7 +1114,7 @@
                 if (target.hasClass('hour_am') || target.hasClass('hour_pm')) {
                   if (hours === 12 && target.hasClass('hour_am')) {
                     hours = 0;
-                  } else if (hours !== 12 && target.hasClass('hour_pm')) {
+                  } else if (target.hasClass('hour_pm')) {
                     hours += 12;
                   }
                 }
